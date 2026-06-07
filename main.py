@@ -2,7 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 from time import sleep
 
-listing = ''
+sublink = ''
 
 while True:
     url = 'https://www.ss.lv/lv/transport/cars/bmw/'
@@ -12,7 +12,7 @@ while True:
     prices = soup.find_all("td", class_="msga2-o pp6")
     prices = str(prices).split('€')
     step = 1
-    if listing == listings[0].find('a', {'class':'am'}):
+    if sublink == listings[0].find('a', {'class':'am'}).get('href'):
         pass
     else:
         listing = listings[0].find('a', {'class':'am'})
@@ -23,6 +23,11 @@ while True:
             price = str(prices[0])[::-1]
             price = price.split('>""')
             price = str(price[0])[::-1]
+            if price[0] == "<":
+                price = price.split('>')
+                price = str(price[1]).split('<')
+                price = str(price[0])
+
             print(price + "€")
             print(str(txt[0]) + "..." + "\n" + str("https://www.ss.lv"+sublink))
             print("===")
