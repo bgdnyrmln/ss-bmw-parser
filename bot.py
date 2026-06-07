@@ -6,6 +6,9 @@ from telegram import ForceReply, Update
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 import requests
 from bs4 import BeautifulSoup
+import os
+from dotenv import load_dotenv, dotenv_values 
+load_dotenv()
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
@@ -110,7 +113,7 @@ async def break_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
 
 def main() -> None:
-    application = Application.builder().token("8929289008:AAHM8JyeM4mtWGFtre49fF4wKmDWZzbmkIk").build()
+    application = Application.builder().token(os.getenv("TOKEN")).build()
 
     application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("help", help_command))
