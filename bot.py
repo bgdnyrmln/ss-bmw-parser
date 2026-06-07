@@ -38,46 +38,43 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 async def scan_loop(update: Update) -> None:
-    sublink = ""
     await update.message.reply_text("scanning started, use /break to stop")
+    sublink = ''
 
     while True:
         try:
-            url = "https://www.ss.lv/lv/transport/cars/bmw/"
-
-            # Run blocking request in executor so it doesn't block the event loop
             loop = asyncio.get_event_loop()
-            response = await loop.run_in_executor(None, requests.get, url)
+            response = await loop.run_in_executor(None, requests.get, 'https://www.ss.lv/lv/transport/cars/bmw/')
 
-            soup = BeautifulSoup(response.text, "html.parser")
+            soup = BeautifulSoup(response.text, 'html.parser')
             listings = soup.find_all("td", class_="msg2")
             prices = soup.find_all("td", class_="msga2-o pp6")
-            prices = str(prices).split("€")
+            prices = str(prices).split('€')
 
-            if listings:
-                listing = listings[0].find("a", {"class": "am"})
+            if sublink == listings[0].find('a', {'class': 'am'}).get('href'):
+                pass
+            else:
+                listing = listings[0].find('a', {'class': 'am'})
                 if listing is not None:
-                    current_link = listing.get("href")
+                    sublink = listing.get('href')
+                    txt = str(listing.text)
+                    txt = txt.split('. ')
+                    price = str(prices[0])[::-1]
+                    price = price.split('>""')
+                    price = str(price[0])[::-1]
+                    if price[0] == "<":
+                        price = price.split('>')
+                        price = str(price[1]).split('<')
+                        price = str(price[0])
+                    print(price + "€")
+                    print(str(txt[0]) + "..." + "\n" + str("https://www.ss.lv" + sublink))
+                    print("===")
+                    await update.message.reply_text(
+                        str(txt[0]) + "...\n" +
+                        "https://www.ss.lv" + sublink + "\n" +
+                        price + "€"
+                    )
 
-                    if current_link != sublink:
-                        sublink = current_link
-                        txt = str(listing.text).split(". ")
-
-                        price = str(prices[0])[::-1]
-                        price = price.split('>""')
-                        price = str(price[0])[::-1]
-                        if price[0] == "<":
-                            price = price.split('>')
-                            price = str(price[1]).split('<')
-                            price = str(price[0])
-                        message = (
-                            f"{txt[0]}...\n"
-                            f"https://www.ss.lv{sublink}\n"
-                            f"{price}€"
-                        )
-                        await update.message.reply_text(message)
-
-            # asyncio.sleep is non-blocking and also serves as a cancellation point
             await asyncio.sleep(5)
 
         except asyncio.CancelledError:
