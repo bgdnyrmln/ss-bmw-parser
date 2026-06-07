@@ -40,7 +40,7 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         await update.message.reply_text("stop")
 
 
-async def scan_loop(update: Update) -> None:
+async def scan_loop(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await update.message.reply_text("scanning started, use /break to stop")
     sublink = ''
 
@@ -48,7 +48,6 @@ async def scan_loop(update: Update) -> None:
         try:
             loop = asyncio.get_event_loop()
             response = await loop.run_in_executor(None, requests.get, 'https://www.ss.lv/lv/transport/cars/bmw/')
-
             soup = BeautifulSoup(response.text, 'html.parser')
             listings = soup.find_all("td", class_="msg2")
             prices = soup.find_all("td", class_="msga2-o pp6")
@@ -72,10 +71,19 @@ async def scan_loop(update: Update) -> None:
                     print(price + "€")
                     print(str(txt[0]) + "..." + "\n" + str("https://www.ss.lv" + sublink))
                     print("===")
-                    await update.message.reply_text(
-                        str(txt[0]) + "...\n" +
-                        "https://www.ss.lv" + sublink + "\n" +
-                        price + "€"
+                    response = await loop.run_in_executor(None, requests.get, 'https://www.ss.lv/' + sublink)
+                    soup = BeautifulSoup(response.text, 'html.parser')
+                    pic = soup.find("img", class_="pic_thumbnail isfoto")
+                    if pic is None:
+                        pic_url = None  # or a placeholder image URL
+                    else:
+                        pic_url = pic.get("src")
+                        if pic_url and pic_url.startswith("/"):
+                            pic_url = "https://www.ss.lv" + pic_url
+                    await context.bot.send_photo(
+                        chat_id=update.effective_chat.id,
+                        photo=pic_url,
+                        caption=str(txt[0]) + "...\n \n" + price + "€" + "\n \n" + "https://www.ss.lv" + sublink
                     )
 
             await asyncio.sleep(5)
@@ -97,7 +105,7 @@ async def scan(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         return
 
     # Create a new Task for this user — fully independent per user
-    task = asyncio.create_task(scan_loop(update))
+    task = asyncio.create_task(scan_loop(update, context))
     scanning_tasks[user_id] = task
 
 
